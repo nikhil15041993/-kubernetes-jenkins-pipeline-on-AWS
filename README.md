@@ -180,3 +180,78 @@ nodeGroups:
       publicKeyName: eks-course
 ```
 
+
+### 12. Add jenkins stages
+
+
+```
+pipeline
+{
+    agent any
+    
+    tools {
+    maven 'maven-3.8.4'
+    }
+    
+  
+
+    
+    stages
+    {
+        stage('scm')
+        {
+            steps
+            {
+                git credentialsId: 'tomcat-deployer',
+                url: 'https://github.com/nikhil15041993/dockeransiblejenkins.git'
+            }
+            
+        }
+        
+        stage('maven build')
+        {
+            steps
+            {
+                sh "mvn clean package"
+            }
+        }
+        
+        stage('Docker build')
+        {
+            steps
+            {
+            
+                 
+               sh 'docker build /var/lib/jenkins/workspace/my-ansible-maven-project -t nikhilnambiars/tomcat:${DOCKER_TAG} '
+            }
+        }
+        
+        
+        stage('DockerHub Push'){
+            steps{
+              
+               withCredentials([string(credentialsId: 'docker-hub2', variable: 'dockerHubPwd')]) {
+                    sh "docker login -u nikhilnambiars -p ${dockerHubPwd}"
+                }
+                
+                sh "docker push nikhilnambiars/tomcat:${DOCKER_TAG}"
+            }
+        }
+        
+        
+        
+        stage('Docker Deploy'){
+            steps{
+            ansiblePlaybook credentialsId: 'dev-server1', disableHostKeyChecking: true, extras: "-e DOCKER_TAG=${DOCKER_TAG}", installation: 'my-ansible', inventory: 'dev.inv', playbook: 'deploy-docker.yml'     
+            }
+        }
+        
+        
+        stage("kubernetes deployment"){
+        sh 'kubectl apply -f deployment.yml'
+    }
+        
+        
+    }
+}
+```
