@@ -158,6 +158,12 @@ Test
 ```
 eksctl version
 ```
+
+Create kubeconfig file automatically
+```
+aws eks update-kubeconfig --region region-code --name cluster-name
+```
+
 ### 9. Create eks cluster using eksctl
 
 Create a yml file
